@@ -4,7 +4,7 @@ from config import ES_HOST, INDEX_NAME
 from elasticsearch import Elasticsearch
 
 from api.schemas import SearchInterpretation, SearchResponse, TrialHit
-from rag import generate_summary
+from rag import generate_summary, generate_thinking_message
 from search.parser import parse_search_query
 from search.es_query import search
 
@@ -44,6 +44,17 @@ def _do_search(q: str, page: int, size: int) -> SearchResponse:
         size=size,
         summary=summary,
     )
+
+
+@router.get(
+    "/search/thinking/{query:path}",
+    summary="Thinking message",
+    description="Returns a short LLM-generated 'thinking' sentence for the given query (for display while search runs).",
+)
+def search_thinking(
+    query: str = Path(..., description="Natural language query"),
+) -> dict[str, str]:
+    return {"thinking": generate_thinking_message(query.strip())}
 
 
 @router.get(

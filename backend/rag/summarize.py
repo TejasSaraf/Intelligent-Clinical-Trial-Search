@@ -122,3 +122,40 @@ def generate_summary(
     except Exception:
         pass
     return None
+
+
+def generate_thinking_message(user_query: str) -> str:
+    """
+    Generate a short "thinking" sentence from the user's search query for display while search runs.
+    Returns a fallback string if LLM is not configured or the call fails.
+    """
+    fallback = "Searching clinical trials…"
+    if not OPENAI_API_KEY or not user_query.strip():
+        return fallback
+
+    prompt = f"""The user just entered this clinical trial search: "{user_query.strip()}"
+
+In one short sentence (under 15 words), say what you're looking for in a friendly, natural way. Examples:
+- "Looking for Phase 2 Breast Cancer trials related to BRCA1."
+- "Searching for recruiting Alzheimer's disease trials."
+- "Finding large trials in the United States."
+Reply with only that one sentence, no quotes or preamble."""
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL or None)
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60,
+            temperature=0.3,
+        )
+        choice = resp.choices[0] if resp.choices else None
+        if choice and choice.message and choice.message.content:
+            text = choice.message.content.strip().strip('"')
+            if text:
+                return text
+    except Exception:
+        pass
+    return fallback
