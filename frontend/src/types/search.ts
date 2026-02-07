@@ -42,4 +42,5 @@ export interface SearchResponse {
   page: number
   size: number
   summary: string | null
+  corrected_query?: string | null
 }

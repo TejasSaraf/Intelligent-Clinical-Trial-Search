@@ -91,3 +91,7 @@ class SearchResponse(BaseModel):
         None,
         description="RAG-generated natural language summary of results (null if LLM not configured or no results).",
     )
+    corrected_query: str | None = Field(
+        None,
+        description="Spell-corrected query if different from user input (for 'Did you mean?' display).",
+    )

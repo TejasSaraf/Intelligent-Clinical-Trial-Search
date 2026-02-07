@@ -15,24 +15,33 @@ def build_query(intent: SearchIntent) -> dict:
         filter_clauses.append({"term": {"overall_status": intent.overall_status}})
     if intent.facility_country:
         filter_clauses.append({"term": {"facility_countries": intent.facility_country}})
-    if intent.condition:
-        filter_clauses.append({
-            "match": {
-                "condition_names.text": {
-                    "query": intent.condition,
-                    "fuzziness": "AUTO",
-                }
-            }
-        })
-    _fuzzy = {"fuzziness": "AUTO"}
 
-    if intent.title_contains:
+    _fuzzy = {"fuzziness": 1}
+    _exact_boost = 2.0
+    _fuzzy_boost = 0.5
+
+    if intent.condition:
         must.append({
             "bool": {
                 "should": [
-                    {"match": {"brief_title": {"query": intent.title_contains, **_fuzzy}}},
-                    {"match": {"official_title": {"query": intent.title_contains, **_fuzzy}}},
-                    {"match": {"brief_summaries_description": {"query": intent.title_contains, **_fuzzy}}},
+                    {"match_phrase": {"condition_names.text": {"query": intent.condition, "boost": _exact_boost}}},
+                    {"match": {"condition_names.text": {"query": intent.condition, **_fuzzy, "boost": _fuzzy_boost}}},
+                ],
+                "minimum_should_match": 1,
+            }
+        })
+
+    if intent.title_contains:
+        q = intent.title_contains
+        must.append({
+            "bool": {
+                "should": [
+                    {"match_phrase": {"brief_title": {"query": q, "boost": _exact_boost}}},
+                    {"match_phrase": {"official_title": {"query": q, "boost": _exact_boost}}},
+                    {"match_phrase": {"brief_summaries_description": {"query": q, "boost": _exact_boost}}},
+                    {"match": {"brief_title": {"query": q, **_fuzzy, "boost": _fuzzy_boost}}},
+                    {"match": {"official_title": {"query": q, **_fuzzy, "boost": _fuzzy_boost}}},
+                    {"match": {"brief_summaries_description": {"query": q, **_fuzzy, "boost": _fuzzy_boost}}},
                 ],
                 "minimum_should_match": 1,
             }
@@ -43,10 +52,13 @@ def build_query(intent: SearchIntent) -> dict:
             should.append({
                 "bool": {
                     "should": [
-                        {"match": {"brief_title": {"query": kw, **_fuzzy}}},
-                        {"match": {"official_title": {"query": kw, **_fuzzy}}},
-                        {"match": {"brief_summaries_description": {"query": kw, **_fuzzy}}},
-                        {"match": {"condition_names.text": {"query": kw, **_fuzzy}}},
+                        {"match_phrase": {"brief_title": {"query": kw, "boost": _exact_boost}}},
+                        {"match_phrase": {"official_title": {"query": kw, "boost": _exact_boost}}},
+                        {"match_phrase": {"condition_names.text": {"query": kw, "boost": _exact_boost}}},
+                        {"match": {"brief_title": {"query": kw, **_fuzzy, "boost": _fuzzy_boost}}},
+                        {"match": {"official_title": {"query": kw, **_fuzzy, "boost": _fuzzy_boost}}},
+                        {"match": {"brief_summaries_description": {"query": kw, **_fuzzy, "boost": _fuzzy_boost}}},
+                        {"match": {"condition_names.text": {"query": kw, **_fuzzy, "boost": _fuzzy_boost}}},
                     ],
                     "minimum_should_match": 1,
                 }
@@ -54,11 +66,23 @@ def build_query(intent: SearchIntent) -> dict:
     elif intent.keywords and intent.title_contains:
         for kw in intent.keywords:
             should.append({
-                "multi_match": {
-                    "query": kw,
-                    "fields": ["brief_title", "official_title", "brief_summaries_description", "condition_names.text"],
-                    "type": "best_fields",
-                    **_fuzzy,
+                "bool": {
+                    "should": [
+                        {"multi_match": {
+                            "query": kw,
+                            "fields": ["brief_title^2", "official_title^2", "brief_summaries_description", "condition_names.text^2"],
+                            "type": "phrase",
+                            "boost": _exact_boost,
+                        }},
+                        {"multi_match": {
+                            "query": kw,
+                            "fields": ["brief_title", "official_title", "brief_summaries_description", "condition_names.text"],
+                            "type": "best_fields",
+                            **_fuzzy,
+                            "boost": _fuzzy_boost,
+                        }},
+                    ],
+                    "minimum_should_match": 1,
                 }
             })
     if intent.enrollment_min is not None:

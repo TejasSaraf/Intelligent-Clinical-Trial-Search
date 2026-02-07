@@ -15,6 +15,7 @@ type Message = {
   page?: number
   size?: number
   query?: string
+  corrected_query?: string | null
 }
 
 function App() {
@@ -50,7 +51,8 @@ function App() {
           total: res.total,
           page: res.page,
           size: res.size,
-          query: trimmed,
+          query: res.corrected_query ?? trimmed,
+          corrected_query: res.corrected_query ?? null,
         },
       ])
     } catch (e) {
@@ -119,6 +121,11 @@ function App() {
                 ) : (
                   <div key={i} className="flex flex-col items-end gap-3">
                     <div className="max-w-[85%] rounded-xl rounded-br-none bg-gray-700 px-4 py-3 text-sm text-gray-100">
+                      {msg.corrected_query && (
+                        <p className="mb-2 text-xs text-green-400" role="status">
+                          Did you mean: <span className="font-medium">{msg.corrected_query}</span>? Results shown for corrected query.
+                        </p>
+                      )}
                       {msg.content}
                     </div>
                     {msg.trials != null && msg.trials.length > 0 && (

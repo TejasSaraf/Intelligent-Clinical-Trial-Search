@@ -70,12 +70,42 @@ def _normalize_condition(condition: str) -> str:
     return CONDITION_SYNONYMS.get(s.lower(), s)
 
 
-def parse_search_query(query: str) -> SearchIntent:
-    intent = SearchIntent(raw_query=query)
+def _intent_from_llm_extraction(d: dict, raw_query: str) -> SearchIntent:
+    """Build SearchIntent from LLM extraction dict."""
+    intent = SearchIntent(raw_query=raw_query)
+    intent.phase = d.get("phase") if isinstance(d.get("phase"), str) else None
+    intent.condition = _normalize_condition(d["condition"]) if d.get("condition") else None
+    intent.overall_status = d.get("status") if isinstance(d.get("status"), str) else None
+    loc = d.get("location")
+    if loc:
+        loc_lower = str(loc).lower()
+        if "united states" in loc_lower or "usa" in loc_lower or loc_lower == "us":
+            intent.facility_country = "United States"
+        else:
+            intent.facility_country = str(loc).strip()
+    kw = d.get("keywords")
+    intent.keywords = [str(k).strip() for k in (kw or [])] if isinstance(kw, list) else []
+    intent.enrollment_min = d.get("enrollment_min") if isinstance(d.get("enrollment_min"), (int, float)) else None
+    intent.title_contains = d.get("title_contains") if isinstance(d.get("title_contains"), str) and d.get("title_contains") else None
+    if intent.title_contains and not intent.keywords and intent.condition:
+        pass
+    elif intent.keywords and not intent.title_contains and not intent.condition:
+        intent.title_contains = intent.keywords[0] if intent.keywords else None
+    return intent
+
+
+def parse_search_query(query: str, llm_extraction: dict | None = None) -> SearchIntent:
     if not query or not query.strip():
-        return intent
+        return SearchIntent(raw_query=query or "")
 
     q = query.strip()
+
+    if llm_extraction:
+        intent = _intent_from_llm_extraction(llm_extraction, q)
+        if intent.phase or intent.condition or intent.overall_status or intent.facility_country or intent.keywords:
+            return intent
+
+    intent = SearchIntent(raw_query=q)
     q_lower = q.lower()
 
     phase_match = re.search(

@@ -4,6 +4,65 @@ from typing import Any
 from config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
 
+def extract_entities_with_llm(query: str) -> dict | None:
+    """
+    Use LLM to extract Phase, Condition, Status, Location from a complex sentence.
+    Returns a dict with keys: phase, condition, status, location, keywords, enrollment_min, title_contains.
+    Returns None if LLM is not configured or call fails.
+    """
+    q = query.strip()
+    if not q or not OPENAI_API_KEY:
+        return None
+
+    prompt = f"""Extract clinical trial search entities from this query. Output valid JSON only.
+
+Query: "{q}"
+
+Extract (use null if not mentioned):
+- phase: one of PHASE1, PHASE2, PHASE3, PHASE4 (e.g. "Phase 2" -> "PHASE2")
+- condition: disease/condition (e.g. "breast cancer", "Alzheimer's")
+- status: one of RECRUITING, COMPLETED, NOT_YET_RECRUITING, ACTIVE_NOT_RECRUITING, TERMINATED (e.g. "recruiting" -> "RECRUITING")
+- location: country or region (e.g. "United States", "US")
+- keywords: list of genes/keywords (e.g. ["BRCA1"])
+- enrollment_min: number if "large trials" or "enrollment > N" (e.g. 500)
+- title_contains: exact phrase if "title contains X"
+
+Output only JSON, e.g.: {{"phase": "PHASE2", "condition": "Breast Cancer", "status": "RECRUITING", "location": null, "keywords": ["BRCA1"], "enrollment_min": null, "title_contains": null}}"""
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL or None)
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.0,
+        )
+        choice = resp.choices[0] if resp.choices else None
+        if choice and choice.message and choice.message.content:
+            text = choice.message.content.strip()
+            # Extract JSON from response (handle markdown code blocks)
+            if "```" in text:
+                start = text.find("{")
+                end = text.rfind("}") + 1
+                if start >= 0 and end > start:
+                    text = text[start:end]
+            data = json.loads(text)
+            return {
+                "phase": data.get("phase"),
+                "condition": data.get("condition"),
+                "status": data.get("status"),
+                "location": data.get("location"),
+                "keywords": data.get("keywords") or [],
+                "enrollment_min": data.get("enrollment_min"),
+                "title_contains": data.get("title_contains"),
+            }
+    except Exception:
+        pass
+    return None
+
+
 def _trial_to_dict(hit: Any, max_desc_len: int = 250) -> dict[str, Any]:
     desc = getattr(hit, "brief_summaries_description", None) or ""
     if len(desc) > max_desc_len:
@@ -76,6 +135,7 @@ Cases to handle:
 8. When interpretation.enrollment_min is set: mention "large trials" or "trials with at least N participants".
 9. When interpretation.location is set: mention "trials in [location]".
 10. When interpretation.status is set: mention recruitment status (e.g. recruiting, completed).
+11. Criterion 4 - Ambiguous/broad queries: When interpretation has no phase, condition, status, keywords, or location (all null/empty), say the search returned a broad set of trials. Suggest adding filters (e.g. phase, condition, status) to narrow results.
 
 Output only the summary text, no preamble or JSON."""
 

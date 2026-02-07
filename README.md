@@ -2,6 +2,9 @@
 
 **Discover clinical trials that match—not the other way around.**
 
+> **About (for GitHub)** — Natural-language search for clinical trials. Query in plain English, get structured results, AI summaries, and spell correction. Built with Elasticsearch, FastAPI, React, and optional OpenAI.  
+> **Topics:** `clinical-trials` `search` `elasticsearch` `fastapi` `react` `typescript` `natural-language` `openai` `tailwindcss` `vite`
+
 A natural-language search app for clinical trials. Type a query in plain English (e.g. *"Phase 2 breast cancer trials with BRCA1"*), and get results plus an AI-generated summary. Built with Elasticsearch, FastAPI, React, and optional OpenAI for spell correction and summaries.
 
 ---
