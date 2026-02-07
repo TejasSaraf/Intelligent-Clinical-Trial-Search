@@ -13,6 +13,7 @@ type Message = {
   total?: number
   page?: number
   size?: number
+  query?: string
 }
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
           total: res.total,
           page: res.page,
           size: res.size,
+          query: trimmed,
         },
       ])
     } catch (e) {
@@ -57,6 +59,32 @@ function App() {
     } finally {
       setLoading(false)
       setThinkingText(null)
+    }
+  }
+
+  const [loadingMoreIndex, setLoadingMoreIndex] = useState<number | null>(null)
+
+  async function loadMoreForMessage(messageIndex: number) {
+    const msg = messages[messageIndex]
+    if (!msg?.query || msg.trials == null || msg.total == null) return
+    const nextPage = (msg.page ?? 1) + 1
+    if (msg.trials.length >= msg.total) return
+    setLoadingMoreIndex(messageIndex)
+    try {
+      const res = await searchClinicalTrials(msg.query, nextPage, msg.size ?? 10)
+      setMessages((prev) =>
+        prev.map((m, i) =>
+          i === messageIndex
+            ? {
+                ...m,
+                trials: [...(m.trials ?? []), ...res.results],
+                page: res.page,
+              }
+            : m
+        )
+      )
+    } finally {
+      setLoadingMoreIndex(null)
     }
   }
 
@@ -97,6 +125,12 @@ function App() {
                           total={msg.total ?? msg.trials.length}
                           page={msg.page ?? 1}
                           size={msg.size ?? 10}
+                          onShowMore={
+                            (msg.total ?? 0) > msg.trials.length && msg.query
+                              ? () => loadMoreForMessage(i)
+                              : undefined
+                          }
+                          isLoadingMore={loadingMoreIndex === i}
                         />
                       </div>
                     )}
