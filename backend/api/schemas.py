@@ -51,3 +51,7 @@ class SearchResponse(BaseModel):
     total: int = Field(description="Total hits (all pages)")
     page: int = Field(ge=1, description="Current page")
     size: int = Field(ge=1, le=100, description="Page size")
+    summary: str | None = Field(
+        None,
+        description="RAG-generated natural language summary of results (null if LLM not configured or no results).",
+    )

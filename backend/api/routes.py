@@ -4,6 +4,7 @@ from config import ES_HOST, INDEX_NAME
 from elasticsearch import Elasticsearch
 
 from api.schemas import SearchInterpretation, SearchResponse, TrialHit
+from rag import generate_summary
 from search.parser import parse_search_query
 from search.es_query import search
 
@@ -28,12 +29,20 @@ def _do_search(q: str, page: int, size: int) -> SearchResponse:
     hits, total = search(es, intent, index=INDEX_NAME, from_=from_, size=size)
     interpretation = SearchInterpretation(**intent.to_interpretation_dict())
     results = [TrialHit.from_es_hit(h) for h in hits]
+    interpretation_dict = intent.to_interpretation_dict()
+    summary = generate_summary(
+        q, results, total,
+        interpretation=interpretation_dict,
+        page=page,
+        size=size,
+    )
     return SearchResponse(
         interpretation=interpretation,
         results=results,
         total=total,
         page=page,
         size=size,
+        summary=summary,
     )
 
 

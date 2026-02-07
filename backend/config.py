@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     data_dir: str = "data"
     clinical_trials_json: str = "clinical_trials.json"
 
+    openai_api_key: str | None = None
+    openai_base_url: str | None = None
+    openai_model: str = "gpt-4o-mini"
+
 
 settings = Settings()
 
@@ -27,3 +31,6 @@ ES_HOST = settings.es_host
 INDEX_NAME = settings.index_name
 DATA_DIR = settings.data_dir
 CLINICAL_TRIALS_JSON = settings.clinical_trials_json
+OPENAI_API_KEY = settings.openai_api_key
+OPENAI_BASE_URL = settings.openai_base_url
+OPENAI_MODEL = settings.openai_model
