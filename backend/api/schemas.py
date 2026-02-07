@@ -22,7 +22,6 @@ class TrialHit(BaseModel):
     enrollment: int | None = None
     completion_date: str | None = None
     score: float | None = Field(None, description="Elasticsearch relevance score")
-    model_config = {"extra": "allow"}
 
     @classmethod
     def from_es_hit(cls, hit: dict) -> "TrialHit":
@@ -38,10 +37,6 @@ class TrialHit(BaseModel):
             enrollment=src.get("enrollment"),
             completion_date=src.get("completion_date"),
             score=hit.get("_score"),
-            **{k: v for k, v in src.items() if k not in (
-                "nct_id", "brief_title", "official_title", "overall_status", "phase",
-                "condition_names", "sponsor_names", "enrollment", "completion_date"
-            )},
         )
 
 

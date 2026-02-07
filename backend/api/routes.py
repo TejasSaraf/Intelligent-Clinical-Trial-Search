@@ -4,7 +4,7 @@ from config import ES_HOST, INDEX_NAME
 from elasticsearch import Elasticsearch
 
 from api.schemas import SearchInterpretation, SearchResponse, TrialHit
-from rag import generate_summary, generate_thinking_message
+from rag import correct_query_spelling, generate_summary, generate_thinking_message
 from search.parser import parse_search_query
 from search.es_query import search
 
@@ -24,6 +24,7 @@ def _do_search(q: str, page: int, size: int) -> SearchResponse:
     es = get_es()
     if not es.ping():
         raise HTTPException(status_code=503, detail="Search service unavailable (Elasticsearch not connected)")
+    q = correct_query_spelling(q)
     intent = parse_search_query(q)
     from_ = (page - 1) * size
     hits, total = search(es, intent, index=INDEX_NAME, from_=from_, size=size)

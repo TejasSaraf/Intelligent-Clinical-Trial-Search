@@ -124,6 +124,42 @@ def generate_summary(
     return None
 
 
+def correct_query_spelling(user_query: str) -> str:
+    q = user_query.strip()
+    if not q or not OPENAI_API_KEY:
+        return q
+
+    prompt = f"""You are a spell-checker for clinical trial search queries. Fix any spelling mistakes in the user's query by replacing misspelled words with the most likely intended word (especially for medical terms, conditions, phases, gene names, etc.). Preserve the meaning and structure of the query.
+
+Rules:
+- Output ONLY the corrected query, nothing else: no explanation, no "Corrected query:", no quotes.
+- If the query has no spelling errors, output it unchanged.
+- Keep phase phrases like "Phase 2", "Phase 3", status like "recruiting", condition names, gene names (e.g. BRCA1), and numbers as-is or correctly spelled.
+- Preserve natural language; do not add or remove words except to fix spelling.
+
+User query:
+{q}"""
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL or None)
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=min(256, len(q) + 100),
+            temperature=0.0,
+        )
+        choice = resp.choices[0] if resp.choices else None
+        if choice and choice.message and choice.message.content:
+            corrected = choice.message.content.strip().strip('"').strip("'")
+            if corrected:
+                return corrected
+    except Exception:
+        pass
+    return q
+
+
 def generate_thinking_message(user_query: str) -> str:
     """
     Generate a short "thinking" sentence from the user's search query for display while search runs.

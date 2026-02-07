@@ -92,6 +92,10 @@ def search(
     query_body["from"] = from_
     query_body["size"] = size
     query_body["sort"] = [{"_score": {"order": "desc"}}, {"completion_date": {"order": "desc", "missing": "_last"}}]
+    query_body["_source"] = [
+        "nct_id", "brief_title", "official_title", "overall_status", "phase",
+        "condition_names", "sponsor_names", "enrollment", "completion_date",
+    ]
 
     resp = es.search(index=index, body=query_body)
     hits = resp["hits"]["hits"]
