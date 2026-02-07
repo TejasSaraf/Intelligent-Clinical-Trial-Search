@@ -66,6 +66,6 @@ def search_thinking(
 def search_trials(
     query: str = Path(..., description="Natural language query"),
     page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(10, ge=1, le=100, description="Results per page"),
+    size: int = Query(10, ge=1, le=10, description="Results per page (max 10)"),
 ) -> SearchResponse:
     return _do_search(query.strip(), page, size)

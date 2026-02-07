@@ -23,6 +23,8 @@ function SearchInput({ onSearch, isLoading, showTitle = true }: SearchInputProps
     const text = query.trim()
     if (!text) return
     onSearch(text)
+    setQuery('')
+    if (editRef.current) editRef.current.textContent = ''
   }
 
   function handleInput() {

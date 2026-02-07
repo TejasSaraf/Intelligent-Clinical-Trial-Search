@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import Nav from './components/Nav'
+import ResultsList from './components/ResultsList'
 import SearchInput from './components/SearchInput'
 import { getThinkingMessage, searchClinicalTrials } from './api/search'
+import type { TrialHit } from './types/search'
 
-type Message = { role: 'user' | 'assistant'; content: string }
+type Message = {
+  role: 'user' | 'assistant'
+  content: string
+  trials?: TrialHit[]
+  total?: number
+  page?: number
+  size?: number
+}
 
 function App() {
   const [loading, setLoading] = useState(false)
@@ -30,7 +39,17 @@ function App() {
     try {
       const res = await searchClinicalTrials(trimmed, 1, 10)
       const summary = res.summary ?? 'No summary available.'
-      setMessages((prev) => [...prev, { role: 'assistant', content: summary }])
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: summary,
+          trials: res.results,
+          total: res.total,
+          page: res.page,
+          size: res.size,
+        },
+      ])
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : 'Search failed'
       setError(errMsg)
@@ -67,10 +86,20 @@ function App() {
                     </div>
                   </div>
                 ) : (
-                  <div key={i} className="flex justify-end">
+                  <div key={i} className="flex flex-col items-end gap-3">
                     <div className="max-w-[85%] rounded-xl rounded-br-none bg-gray-700 px-4 py-3 text-sm text-gray-100">
                       {msg.content}
                     </div>
+                    {msg.trials != null && msg.trials.length > 0 && (
+                      <div className="w-full max-w-[85%] border-t border-gray-600 pt-3">
+                        <ResultsList
+                          results={msg.trials}
+                          total={msg.total ?? msg.trials.length}
+                          page={msg.page ?? 1}
+                          size={msg.size ?? 10}
+                        />
+                      </div>
+                    )}
                   </div>
                 )
               )}
