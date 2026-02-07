@@ -4,13 +4,24 @@ def get_index_mapping() -> dict:
             "number_of_shards": 1,
             "number_of_replicas": 0,
             "analysis": {
+                "filter": {
+                    "condition_synonyms": {
+                        "type": "synonym",
+                        "synonyms": [
+                            "alzheimer's, alzheimers, alzheimer => alzheimer disease"
+                        ]
+                    }
+                },
                 "analyzer": {
-                    "default": {
-                        "type": "standard"
-                    },
+                    "default": {"type": "standard"},
                     "title_analyzer": {
                         "type": "standard",
                         "stopwords": "_english_"
+                    },
+                    "condition_synonym_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter": ["lowercase", "condition_synonyms"]
                     }
                 }
             }
@@ -44,7 +55,13 @@ def get_index_mapping() -> dict:
                 "enrollment_type": {"type": "keyword"},
                 "condition_names": {
                     "type": "keyword",
-                    "fields": {"text": {"type": "text", "analyzer": "standard"}}
+                    "fields": {
+                        "text": {
+                            "type": "text",
+                            "analyzer": "standard",
+                            "search_analyzer": "condition_synonym_analyzer"
+                        }
+                    }
                 },
                 "sponsor_names": {"type": "keyword"},
                 "source": {"type": "keyword"},

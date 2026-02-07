@@ -130,13 +130,18 @@ def run_ingest() -> None:
         sys.exit(1)
 
     raw_docs = load_json_path(json_path)
+    print(f"Loaded {len(raw_docs)} trials.")
 
     docs = [_flatten_doc(d) for d in raw_docs]
 
     es = Elasticsearch(ES_HOST)
     if not es.ping():
+        print("Cannot connect to Elasticsearch. Is it running on localhost:9200?", file=sys.stderr)
         sys.exit(1)
 
     mapping = get_index_mapping()
     create_index(es, INDEX_NAME, mapping)
+
+    count = bulk_index(es, INDEX_NAME, docs)
+    print(f"Indexed {count} documents.")
     es.indices.refresh(index=INDEX_NAME)
