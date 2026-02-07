@@ -3,6 +3,7 @@ import './App.css'
 import Nav from './components/Nav'
 import ResultsList from './components/ResultsList'
 import SearchInput from './components/SearchInput'
+import TrialDetailModal from './components/TrialDetailModal'
 import { getThinkingMessage, searchClinicalTrials } from './api/search'
 import type { TrialHit } from './types/search'
 
@@ -63,6 +64,7 @@ function App() {
   }
 
   const [loadingMoreIndex, setLoadingMoreIndex] = useState<number | null>(null)
+  const [detailNctId, setDetailNctId] = useState<string | null>(null)
 
   async function loadMoreForMessage(messageIndex: number) {
     const msg = messages[messageIndex]
@@ -92,6 +94,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
+      <TrialDetailModal nctId={detailNctId} onClose={() => setDetailNctId(null)} />
       <Nav />
       {!hasSearched ? (
         <main className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
@@ -100,7 +103,7 @@ function App() {
       ) : (
         <>
           <main className="flex-1 overflow-auto px-4 pb-56 pt-6 sm:px-6">
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
               {error && (
                 <p className="w-full text-sm text-red-400" role="alert">
                   {error}
@@ -131,6 +134,7 @@ function App() {
                               : undefined
                           }
                           isLoadingMore={loadingMoreIndex === i}
+                          onViewDetails={setDetailNctId}
                         />
                       </div>
                     )}
@@ -150,7 +154,7 @@ function App() {
             </div>
           </main>
           <footer className="fixed bottom-0 left-0 right-0 bg-black py-4">
-            <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="mx-auto max-w-5xl px-4 sm:px-6">
               <SearchInput onSearch={handleSearch} isLoading={loading} showTitle={false} />
             </div>
           </footer>

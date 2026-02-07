@@ -40,6 +40,47 @@ class TrialHit(BaseModel):
         )
 
 
+class TrialDetail(TrialHit):
+    """Full trial record for detail view (includes description, eligibility, etc.)."""
+    brief_summaries_description: str | None = None
+    detailed_description: str | None = None
+    eligibility_criteria: str | None = None
+    study_type: str | None = None
+    start_date: str | None = None
+    primary_completion_date: str | None = None
+    facility_countries: list[str] = Field(default_factory=list)
+    facility_cities: list[str] = Field(default_factory=list)
+    gender: str | None = None
+    minimum_age: str | None = None
+    maximum_age: str | None = None
+
+    @classmethod
+    def from_es_source(cls, src: dict, score: float | None = None) -> "TrialDetail":
+        return cls(
+            nct_id=src.get("nct_id"),
+            brief_title=src.get("brief_title"),
+            official_title=src.get("official_title"),
+            overall_status=src.get("overall_status"),
+            phase=src.get("phase"),
+            condition_names=src.get("condition_names") or [],
+            sponsor_names=src.get("sponsor_names") or [],
+            enrollment=src.get("enrollment"),
+            completion_date=src.get("completion_date"),
+            score=score,
+            brief_summaries_description=src.get("brief_summaries_description"),
+            detailed_description=src.get("detailed_description"),
+            eligibility_criteria=src.get("eligibility_criteria"),
+            study_type=src.get("study_type"),
+            start_date=src.get("start_date"),
+            primary_completion_date=src.get("primary_completion_date"),
+            facility_countries=src.get("facility_countries") or [],
+            facility_cities=src.get("facility_cities") or [],
+            gender=src.get("gender"),
+            minimum_age=src.get("minimum_age"),
+            maximum_age=src.get("maximum_age"),
+        )
+
+
 class SearchResponse(BaseModel):
     interpretation: SearchInterpretation = Field(description="Extracted intent/entities")
     results: list[TrialHit] = Field(default_factory=list, description="Trials for this page")

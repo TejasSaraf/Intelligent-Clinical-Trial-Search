@@ -1,4 +1,4 @@
-import type { SearchResponse } from '../types/search'
+import type { SearchResponse, TrialDetail } from '../types/search'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -28,4 +28,14 @@ export async function getThinkingMessage(query: string): Promise<string> {
   if (!res.ok) return 'Searching clinical trials…'
   const data = await res.json()
   return data.thinking ?? 'Searching clinical trials…'
+}
+
+export async function getTrialById(nctId: string): Promise<TrialDetail> {
+  const url = `${API_BASE}/trial/${encodeURIComponent(nctId)}`
+  const res = await fetch(url)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail ?? `Trial not found: ${res.status}`)
+  }
+  return res.json()
 }

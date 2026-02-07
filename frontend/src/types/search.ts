@@ -21,6 +21,20 @@ export interface TrialHit {
   score?: number | null
 }
 
+export interface TrialDetail extends TrialHit {
+  brief_summaries_description?: string | null
+  detailed_description?: string | null
+  eligibility_criteria?: string | null
+  study_type?: string | null
+  start_date?: string | null
+  primary_completion_date?: string | null
+  facility_countries?: string[]
+  facility_cities?: string[]
+  gender?: string | null
+  minimum_age?: string | null
+  maximum_age?: string | null
+}
+
 export interface SearchResponse {
   interpretation: SearchInterpretation
   results: TrialHit[]

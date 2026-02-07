@@ -76,11 +76,16 @@ function SearchInput({ onSearch, isLoading, showTitle = true }: SearchInputProps
   )
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-4xl flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex w-full max-w-5xl flex-col gap-4">
       {showTitle && (
-        <h2 className="mb-6 text-center text-5xl font-semibold text-white">
-          What's on <span className="bg-gradient-to-r from-green-200 via-green-500 to-emerald-600 bg-clip-text text-transparent">agenda today?</span>
-        </h2>
+        <>
+          <h2 className="mb-6 text-center text-6xl font-semibold text-white">
+            What's on <span className="bg-gradient-to-r from-green-200 via-green-500 to-emerald-600 bg-clip-text text-transparent">agenda today?</span>
+          </h2>
+          <p className="mb-6 text-center text-xl font-medium text-gray-100">
+            Discover clinical trials that match—not the other way around
+          </p>
+        </>
       )}
       <div className="relative w-full">
         <div

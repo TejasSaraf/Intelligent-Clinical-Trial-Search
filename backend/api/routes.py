@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Path, Query
 from config import ES_HOST, INDEX_NAME
 from elasticsearch import Elasticsearch
 
-from api.schemas import SearchInterpretation, SearchResponse, TrialHit
+from api.schemas import SearchInterpretation, SearchResponse, TrialDetail, TrialHit
 from rag import correct_query_spelling, generate_summary, generate_thinking_message
 from search.parser import parse_search_query
 from search.es_query import search
@@ -45,6 +45,27 @@ def _do_search(q: str, page: int, size: int) -> SearchResponse:
         size=size,
         summary=summary,
     )
+
+
+@router.get(
+    "/trial/{nct_id}",
+    response_model=TrialDetail,
+    summary="Trial details",
+    description="Fetch full details for a single trial by NCT ID.",
+)
+def get_trial(nct_id: str = Path(..., description="NCT ID (e.g. NCT00001234)")) -> TrialDetail:
+    es = get_es()
+    if not es.ping():
+        raise HTTPException(status_code=503, detail="Search service unavailable (Elasticsearch not connected)")
+    resp = es.search(
+        index=INDEX_NAME,
+        body={"query": {"term": {"nct_id": nct_id}}, "size": 1},
+    )
+    hits = resp["hits"]["hits"]
+    if not hits:
+        raise HTTPException(status_code=404, detail=f"Trial {nct_id} not found")
+    src = hits[0].get("_source") or {}
+    return TrialDetail.from_es_source(src, score=hits[0].get("_score"))
 
 
 @router.get(
