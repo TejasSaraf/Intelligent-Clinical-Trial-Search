@@ -1,4 +1,4 @@
-# Clinical Trial Search
+# ClinSearch
 
 **Discover clinical trials that match—not the other way around.**
 
